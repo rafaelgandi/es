@@ -1,10 +1,16 @@
 /*	
-    Compile es6 syntax
-	 - For now only does Fat Arrow Functions, const/let expressions and function default parameters. Tested on IE8. 
-	 - Polyfill for trim(), forEach(), [].indexOf
+    Naive ES6 Transpiler
+	 - For now only have limited support for: 
+		+ Fat Arrow Functions
+		+ const/let expressions
+		+ Function default parameters
+		+ Template literals
+	 - Polyfill for ''.trim(), [].forEach(), [].indexOf
 	 - Serves as a simple safety net for the features above.
+	 - Note, this transpiler may not work on minified files :(
+	 - Tested and working on IE 7 & 8. 
 	Author: Rafael Gandionco (www.rafaelgandi.tk)
-	LM: 2017-05-26
+	LM: 2017-05-27
 */
 ;(function () {
 	"use strict";
@@ -83,6 +89,11 @@
 	
 	var parser = {
 		compile: function (_code) {
+			// Remove comments. Stole this from require.js source. //
+			var commentRegExp = /\/\*[\s\S]*?\*\/|([^:"'=]|^)\/\/.*$/mg;
+			_code = _code.trim().replace(commentRegExp, function (match, singlePrefix) {
+				return singlePrefix || '';
+			});
 			var lines = _code.split(/\n/),
 				compiled = '',
 				piece = '';			
@@ -91,6 +102,7 @@
 					piece = parser.fatArrowFunctions(lines[i]);
 					piece = parser.constAndLet(piece);
 					piece = parser.defaultParameters(piece);
+					piece = parser.templateLiterals(piece);
 					compiled += (piece + "\n");
 				}
 				else { compiled += (lines[i] + "\n"); }
@@ -179,7 +191,18 @@
 				}
 				return compiled;
 			};
-		})()
+		})(),
+		templateLiterals: function (_code) {
+			// Simplest ES6 Template Literals //
+			var compiled = '',
+				TL_REGEX_BACKTICKS = /`([^`]*)`/ig, // `some string`
+				TL_REGEX_VARS = /\$\{([\S]+)\}/ig; // ${var}
+			if (_code.indexOf('`') === -1) { return _code; }	
+			compiled = _code.trim().replace(TL_REGEX_BACKTICKS, '\'$1\'');
+			if (_code.indexOf('${') === -1) { return compiled; }
+			compiled = compiled.trim().replace(TL_REGEX_VARS, '\'\+$1\+\'');	
+			return compiled;	
+		}
 	};
 	// Require JS plugin API //
 	// See: http://requirejs.org/docs/plugins.html
@@ -187,9 +210,7 @@
 	 	load: function (name, req, onLoad, config) {
 			/**/
 			if (IS_ARROW_FUNC_SUPPORTED) { // no need to do anymore work, yay!
-				req([name], function (module) {
-					onLoad(module);
-				});
+				req([name], function (module) { onLoad(module); });
 				return;
 			}
 			/**/
@@ -208,9 +229,7 @@
 				catch (evalError) {
 					throw new Error('es.js: Eval error for "'+req.toUrl(name)+'" with message: "' + evalError.message + '"');
 				}
-				req([name], function (module) {
-					onLoad(module);
-				});
+				req([name], function (module) { onLoad(module); });
 	 		});
 	 	}
 	});
