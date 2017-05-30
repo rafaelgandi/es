@@ -4,13 +4,13 @@
 		+ Fat Arrow Functions
 		+ const/let expressions
 		+ Function default parameters
-		+ Template literals
+		+ Template literals (supports multi-line)
 	 - Polyfill for ''.trim(), [].forEach(), [].indexOf
 	 - Serves as a simple safety net for the features above.
 	 - Note, this transpiler may not work on minified files :(
 	 - Tested and working on IE 7 & 8. 
 	Author: Rafael Gandionco (www.rafaelgandi.tk)
-	LM: 2017-05-27
+	LM: 2017-05-30
 */
 ;(function () {
 	"use strict";
@@ -88,16 +88,29 @@
 	}
 	
 	var parser = {
+		_normalizeTemplateLiterals: function (_code) {
+			// Normalize for multi line template literals //
+			return _code.replace(/`([\s\S]+)`/ig, function (_match, _m1) {					
+				return '`' + _m1.replace(/[\n\r]/ig, '') + '`';
+			});
+		},
 		compile: function (_code) {
 			// Remove comments. Stole this from require.js source. //
 			var commentRegExp = /\/\*[\s\S]*?\*\/|([^:"'=]|^)\/\/.*$/mg;
 			_code = _code.trim().replace(commentRegExp, function (match, singlePrefix) {
 				return singlePrefix || '';
 			});
+			_code = parser._normalizeTemplateLiterals(_code);
 			var lines = _code.split(/\n/),
+				linesLen = lines.length,
 				compiled = '',
-				piece = '';			
-			for (var i = 0; i < lines.length; i++) {
+				piece = '';
+			if (linesLen < 3) {
+				try {
+					console.warn('es.js might not work properly with minified files.');
+				} catch (err) {}
+			}				
+			for (var i = 0; i < linesLen; i++) {
 				if (lines[i].trim() !== '') {
 					piece = parser.fatArrowFunctions(lines[i]);
 					piece = parser.constAndLet(piece);
@@ -195,10 +208,12 @@
 		templateLiterals: function (_code) {
 			// Simplest ES6 Template Literals //
 			var compiled = '',
+				TL_SINGLE_QUOTES = /[\']/ig, // single quotes
 				TL_REGEX_BACKTICKS = /`([^`]*)`/ig, // `some string`
 				TL_REGEX_VARS = /\$\{([\S]+)\}/ig; // ${var}
 			if (_code.indexOf('`') === -1) { return _code; }	
-			compiled = _code.trim().replace(TL_REGEX_BACKTICKS, '\'$1\'');
+			compiled = _code.trim().replace(TL_SINGLE_QUOTES, "\\'"); // escape single quotes first
+			compiled = compiled.trim().replace(TL_REGEX_BACKTICKS, '\'$1\'');
 			if (_code.indexOf('${') === -1) { return compiled; }
 			compiled = compiled.trim().replace(TL_REGEX_VARS, '\'\+$1\+\'');	
 			return compiled;	
@@ -208,7 +223,7 @@
 	// See: http://requirejs.org/docs/plugins.html
 	define({	
 	 	load: function (name, req, onLoad, config) {
-			/**/
+			/** /
 			if (IS_ARROW_FUNC_SUPPORTED) { // no need to do anymore work, yay!
 				req([name], function (module) { onLoad(module); });
 				return;
@@ -223,7 +238,6 @@
 				// To avoid anonymous define() mismatch error when evaling make sure to 
 				// specify a module id for the define() method.
 				esCode = esCode.replace('define(', 'define("'+name+'",');
-				//console.log(esCode);
 				// Indirect call to eval for implicit global scope. 
 				try { window.eval(esCode); }
 				catch (evalError) {
