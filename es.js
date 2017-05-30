@@ -88,12 +88,6 @@
 	}
 	
 	var parser = {
-		_normalizeTemplateLiterals: function (_code) {
-			// Normalize for multi line template literals //
-			return _code.replace(/`([\s\S]+)`/ig, function (_match, _m1) {					
-				return '`' + _m1.replace(/[\n\r]/ig, '') + '`';
-			});
-		},
 		compile: function (_code) {
 			// Remove comments. Stole this from require.js source. //
 			var commentRegExp = /\/\*[\s\S]*?\*\/|([^:"'=]|^)\/\/.*$/mg;
@@ -217,13 +211,19 @@
 			if (_code.indexOf('${') === -1) { return compiled; }
 			compiled = compiled.trim().replace(TL_REGEX_VARS, '\'\+$1\+\'');	
 			return compiled;	
+		},
+		_normalizeTemplateLiterals: function (_code) {
+			// Normalize for multi line template literals //
+			return _code.replace(/`([\s\S]+)`/ig, function (_match, _m1) {					
+				return '`' + _m1.replace(/[\n\r]/ig, '') + '`';
+			});
 		}
 	};
 	// Require JS plugin API //
 	// See: http://requirejs.org/docs/plugins.html
 	define({	
 	 	load: function (name, req, onLoad, config) {
-			/** /
+			/**/
 			if (IS_ARROW_FUNC_SUPPORTED) { // no need to do anymore work, yay!
 				req([name], function (module) { onLoad(module); });
 				return;
