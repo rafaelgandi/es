@@ -10,7 +10,7 @@
 	 - Note, this transpiler may not work on minified files :(
 	 - Tested and working on IE 7 & 8. 
 	Author: Rafael Gandionco (www.rafaelgandi.tk)
-	LM: 2017-05-30
+	LM: 2017-05-31
 */
 ;(function () {
 	"use strict";
@@ -204,7 +204,7 @@
 			var compiled = '',
 				TL_SINGLE_QUOTES = /[\']/ig, // single quotes
 				TL_REGEX_BACKTICKS = /`([^`]*)`/ig, // `some string`
-				TL_REGEX_VARS = /\$\{([\S]+)\}/ig; // ${var}
+				TL_REGEX_VARS = /\$\{([^\}\{]+)\}/ig; // ${var}
 			if (_code.indexOf('`') === -1) { return _code; }	
 			compiled = _code.trim().replace(TL_SINGLE_QUOTES, "\\'"); // escape single quotes first
 			compiled = compiled.trim().replace(TL_REGEX_BACKTICKS, '\'$1\'');
@@ -238,6 +238,9 @@
 				// To avoid anonymous define() mismatch error when evaling make sure to 
 				// specify a module id for the define() method.
 				esCode = esCode.replace('define(', 'define("'+name+'",');
+				// if (name.indexOf('SimpleSelect') !== -1) {
+				// 	console.log(esCode);
+				// }				
 				// Indirect call to eval for implicit global scope. 
 				try { window.eval(esCode); }
 				catch (evalError) {
