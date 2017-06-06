@@ -5,12 +5,12 @@
 		+ const/let expressions
 		+ Function default parameters
 		+ Template literals (supports multi-line)
-	 - Polyfill for ''.trim(), [].forEach(), [].indexOf
+	 - Polyfill for ''.trim(), [].forEach(), [].indexOf, [].map
 	 - Serves as a simple safety net for the features above.
 	 - Note, this transpiler may not work on minified files :(
 	 - Tested and working on IE 7 & 8. 
 	Author: Rafael Gandionco (www.rafaelgandi.tk)
-	LM: 2017-05-31
+	LM: 2017-06-06
 */
 ;(function () {
 	"use strict";
@@ -39,6 +39,11 @@
 	// See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf?v=example
 	if (! Array.prototype.indexOf) {
 		Array.prototype.indexOf=function(a,b){var c;if(this==null)throw new TypeError('"this" is null or not defined');var d=Object(this),e=d.length>>>0;if(e===0)return-1;var f=b|0;if(f>=e)return-1;c=Math.max(f>=0?f:e-Math.abs(f),0);while(c<e){if(c in d&&d[c]===a)return c;c++}return-1};
+	}
+	// Production steps of ECMA-262, Edition 5, 15.4.4.19
+	// See: https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Array/map?v=example
+	if (!Array.prototype.map) {
+		Array.prototype.map=function(a){var b,c,d;if(this==null)throw new TypeError("this is null or not defined");var e=Object(this),f=e.length>>>0;if(typeof a!="function")throw new TypeError(a+" is not a function");arguments.length>1&&(b=arguments[1]),c=Array(f),d=0;while(d<f){var g,h;d in e&&(g=e[d],h=a.call(b,g,d,e),c[d]=h),d++}return c};
 	}
 		
     function XHR() {
@@ -238,7 +243,7 @@
 				// To avoid anonymous define() mismatch error when evaling make sure to 
 				// specify a module id for the define() method.
 				esCode = esCode.replace('define(', 'define("'+name+'",');
-				// if (name.indexOf('SimpleSelect') !== -1) {
+				// if (name.indexOf('SelectorCache') !== -1) {
 				// 	console.log(esCode);
 				// }				
 				// Indirect call to eval for implicit global scope. 
